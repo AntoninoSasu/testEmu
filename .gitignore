@@ -32,3 +32,6 @@ Thumbs.db
 
 # vcpkg (if you go that route on Windows)
 vcpkg_installed/
+
+# JSON 
+compile_commands.json
