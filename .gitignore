@@ -2,6 +2,9 @@
 build/
 cmake-build-*/
 
+# Logs
+logs/
+
 # CMake generated files
 CMakeCache.txt
 CMakeFiles/
@@ -35,3 +38,5 @@ vcpkg_installed/
 
 # JSON 
 compile_commands.json
+
+.clang-format

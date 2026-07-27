@@ -3,8 +3,8 @@ Built as a learning project following [Ayman Bagabas's writeup](https://aymanbag
 
 ## Status
 
-- [ ] Fetch-decode-execute loop
-- [ ] Opcodes: 00E0, 1NNN, 6XNN, ANNN, DXYN (IBM logo runs)
+- [x] Fetch-decode-execute loop
+- [x] Opcodes: 00E0, 1NNN, 6XNN, ANNN, DXYN
 - [ ] Full opcode table
 - [ ] Sound timer / beep
 - [ ] Keypad input mapping
@@ -13,11 +13,9 @@ Built as a learning project following [Ayman Bagabas's writeup](https://aymanbag
 
 Requires SDL2 and CMake ≥ 3.16.
 
-\`\`\`bash
 cmake -S . -B build
 cmake --build build
 ./build/chip8 roms/INVADERS.ch8
-\`\`\`
 
 ## Controls
 

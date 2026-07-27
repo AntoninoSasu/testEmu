@@ -32,8 +32,11 @@ int main(int argc, char **argv) {
 
     bool systemisrunning = true;
 
+    // Main Loop
     while (systemisrunning) {
         Uint32 frame_start = SDL_GetTicks();
+
+        systemisrunning = inputPoll(&chip8);
 
         // execute instruction. Run several CPU cycles per frame
         for (int i = 0; i < CYCLES_PER_FRAME; i++)

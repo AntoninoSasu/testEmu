@@ -39,6 +39,8 @@ void executeOP(Chip8 *chip8) {
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
 
+    // TEST:
+    // printf("PC:0x%04x OP:0x%04x I:0x%04x\n", chip8->pc, opcode, chip8->I);
     chip8->pc += 2;
 
     // Decode
@@ -77,7 +79,7 @@ void executeOP(Chip8 *chip8) {
             chip8->pc += 2;
         break;
     case 0x4000: // 4xkk: Skip next instruction if Vx != kk
-        if (chip8->V[x] == kk)
+        if (chip8->V[x] != kk)
             chip8->pc += 2;
         break;
     case 0x5000: // 5xy0: Skip next instruction if Vx == Vy
@@ -102,53 +104,38 @@ void executeOP(Chip8 *chip8) {
             chip8->V[x] = chip8->V[y];
             break;
         case 0x1: // Set Vx = Vx OR Vy
-            chip8->V[x] = chip8->V[x] | chip8->V[y];
+            chip8->V[x] |= chip8->V[y];
             break;
         case 0x2: // Set Vx = Vx AND Vy
-            chip8->V[x] = chip8->V[x] & chip8->V[y];
+            chip8->V[x] &= chip8->V[y];
             break;
         case 0x3: // Set Vx = Vx XOR Vy
-            chip8->V[x] = chip8->V[x] ^ chip8->V[y];
+            chip8->V[x] ^= chip8->V[y];
             break;
         case 0x4: // The values of Vx and Vy are added together. If the result
                   // is greater than 8 bits VF is set to 1, otherwise 0. Only
                   // the lowest 8 bits of the result are kept, and stored in Vx
-            if ((chip8->V[x] + chip8->V[y]) > 255)
-                chip8->V[0xF] = 1;
-            else
-                chip8->V[0xF] = 0;
+            chip8->V[0xF] = (chip8->V[x] + chip8->V[y] > 255) ? 1 : 0;
             chip8->V[x] += chip8->V[y];
             break;
         case 0x5: // If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is
                   // subtracted from Vx, and the results stored in Vx
-            if (chip8->V[x] > chip8->V[y])
-                chip8->V[0xF] = 1;
-            else
-                chip8->V[0xF] = 0;
+            chip8->V[0xF] = (chip8->V[x] > chip8->V[y]) ? 1 : 0;
             chip8->V[x] = chip8->V[x] - chip8->V[y];
             break;
         case 0x6: // If the least-significant bit of Vx is 1, then VF is set to
                   // 1, otherwise 0. Then Vx is divided by 2
-            if (chip8->V[x] & 1)
-                chip8->V[0xF] = 1;
-            else
-                chip8->V[0xF] = 0;
+            chip8->V[0xF] = chip8->V[x] & 1;
             chip8->V[x] = chip8->V[x] >> 1;
             break;
         case 0x7: // If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is
                   // subtracted from Vy, and the results stored in Vx
-            if (chip8->V[y] > chip8->V[x])
-                chip8->V[0xF] = 1;
-            else
-                chip8->V[0xF] = 0;
+            chip8->V[0xF] = (chip8->V[y] > chip8->V[x]) ? 1 : 0;
             chip8->V[x] = chip8->V[y] - chip8->V[x];
             break;
         case 0xE: // If the most-significant bit of Vx is 1, then VF is set to
                   // 1, otherwise to 0. Then Vx is multiplied by 2
-            if (chip8->V[x] & 128)
-                chip8->V[0xF] = 1;
-            else
-                chip8->V[0xF] = 0;
+            chip8->V[0xF] = (chip8->V[x] & 0x80) >> 7;
             chip8->V[x] = chip8->V[x] << 1;
             break;
         default:
@@ -180,12 +167,12 @@ void executeOP(Chip8 *chip8) {
                  // 8 pixels and a height of N pixels
         chip8->V[0xF] = 0;
         for (int row = 0; row < n; row++) {
-            uint8_t sprite_byte = chip8->memory[chip8->I + row];
+            uint8_t spriteByte = chip8->memory[chip8->I + row];
             for (int col = 0; col < 8; col++) {
-                if (!(sprite_byte & (0x80 >> col)))
+                if (!(spriteByte & (0x80 >> col)))
                     continue;
-                int px = (x + col) % DISPLAY_WIDTH;
-                int py = (y + row) % DISPLAY_HEIGHT;
+                int px = (chip8->V[x] + col) % DISPLAY_WIDTH;
+                int py = (chip8->V[y] + row) % DISPLAY_HEIGHT;
                 int idx = py * DISPLAY_WIDTH + px;
                 if (chip8->display[idx])
                     chip8->V[0xF] = 1;
