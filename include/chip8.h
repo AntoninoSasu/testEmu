@@ -11,7 +11,9 @@
 #define DISPLAY_WIDTH 64
 #define DISPLAY_HEIGHT 32
 #define KEYPAD_SIZE 16
-#define START_ADDRESS 0x200 // Place in memory where the interpreter space ends
+#define FONTSET_SIZE 80      // 16 hex digits X 5 bytes each
+#define FONTSET_ADDRESS 0x50 // Conventional location
+#define START_ADDRESS 0x200  // Place in memory where the interpreter space ends
 
 typedef struct {
     uint8_t memory[MEMORY_SIZE];

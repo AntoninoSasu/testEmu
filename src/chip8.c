@@ -1,13 +1,32 @@
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "chip8.h"
 
+static const uint8_t fontset[FONTSET_SIZE] = {
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+};
+
 void initChip8(Chip8 *chip8) {
     memset(chip8, 0, sizeof(Chip8));
     chip8->pc = START_ADDRESS;
-    // TODO: initialize fontset after getting to graphics part
-    // memcpy(chip8->memory + FONTSET_ADDRESS, fontset, FONTSET_SIZE);
+    memcpy(chip8->memory + FONTSET_ADDRESS, fontset, FONTSET_SIZE);
 }
 
 bool loadRom(Chip8 *chip8, const char *filename) {
@@ -112,32 +131,47 @@ void executeOP(Chip8 *chip8) {
         case 0x3: // Set Vx = Vx XOR Vy
             chip8->V[x] ^= chip8->V[y];
             break;
-        case 0x4: // The values of Vx and Vy are added together. If the result
-                  // is greater than 8 bits VF is set to 1, otherwise 0. Only
-                  // the lowest 8 bits of the result are kept, and stored in Vx
-            chip8->V[0xF] = (chip8->V[x] + chip8->V[y] > 255) ? 1 : 0;
-            chip8->V[x] += chip8->V[y];
+        case 0x4: { // The values of Vx and Vy are added together. If the result
+                    // is greater than 8 bits VF is set to 1, otherwise 0. Only
+                    // the lowest 8 bits of the result are kept, and stored in
+                    // Vx
+            // NOTE: In these cases where V[0xF] flag is set, we gotta care
+            // about the order of operations, because the V[0XF] itself could be
+            // used as V[x] or V[y] and we must set the flag AFTER the
+            // operations. This also happens in 0x5, 0x6, 0x7, 0xE.
+            // We also have to be careful with the carry values.
+            uint16_t aux = chip8->V[x] + chip8->V[y];
+            chip8->V[x] = aux;
+            chip8->V[0xF] = (aux > 255) ? 1 : 0;
             break;
-        case 0x5: // If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is
-                  // subtracted from Vx, and the results stored in Vx
-            chip8->V[0xF] = (chip8->V[x] > chip8->V[y]) ? 1 : 0;
+        }
+        case 0x5: { // If Vx >= Vy, then VF is set to 1, otherwise 0. Then Vy is
+                    // subtracted from Vx, and the results stored in Vx
+            uint8_t aux = (chip8->V[x] >= chip8->V[y]) ? 1 : 0;
             chip8->V[x] = chip8->V[x] - chip8->V[y];
+            chip8->V[0xF] = aux;
             break;
-        case 0x6: // If the least-significant bit of Vx is 1, then VF is set to
-                  // 1, otherwise 0. Then Vx is divided by 2
-            chip8->V[0xF] = chip8->V[x] & 1;
-            chip8->V[x] = chip8->V[x] >> 1;
+        }
+        case 0x6: { // If the least-significant bit of Vx is 1, then VF is set
+                    // to
+                    // 1, otherwise 0. Then Vx is divided by 2
+            uint8_t aux = chip8->V[x];
+            chip8->V[x] = aux >> 1;
+            chip8->V[0xF] = aux & 1;
             break;
-        case 0x7: // If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is
+        }
+        case 0x7: // If Vy >= Vx, then VF is set to 1, otherwise 0. Then Vx is
                   // subtracted from Vy, and the results stored in Vx
-            chip8->V[0xF] = (chip8->V[y] > chip8->V[x]) ? 1 : 0;
             chip8->V[x] = chip8->V[y] - chip8->V[x];
+            chip8->V[0xF] = (chip8->V[y] >= chip8->V[x]) ? 1 : 0;
             break;
-        case 0xE: // If the most-significant bit of Vx is 1, then VF is set to
-                  // 1, otherwise to 0. Then Vx is multiplied by 2
-            chip8->V[0xF] = (chip8->V[x] & 0x80) >> 7;
-            chip8->V[x] = chip8->V[x] << 1;
+        case 0xE: { // If the most-significant bit of Vx is 1, then VF is set to
+                    // 1, otherwise to 0. Then Vx is multiplied by 2
+            uint8_t aux = chip8->V[x];
+            chip8->V[x] = aux << 1;
+            chip8->V[0xF] = (aux & 0x80) >> 7;
             break;
+        }
         default:
             fprintf(stderr, "Opcode not valid: 0x%04X\n", opcode);
             showSystemState(chip8);
@@ -200,13 +234,20 @@ void executeOP(Chip8 *chip8) {
         case 0x07: // Set Vx to delay timer value
             chip8->V[x] = chip8->delay_timer;
             break;
-        case 0x0A: // Wait for a key press, store the value of the key in Vx
-            // TODO: implement after input part is done
-            fprintf(stderr, "Input opcodes not implemented yet 0x%04X\n",
-                    opcode);
-            showSystemState(chip8);
-            exit(EXIT_FAILURE);
+        case 0x0A: { // Wait for a key press, store the value of the key in Vx
+            bool key_pressed = false;
+            for (int i = 0; i < KEYPAD_SIZE; i++) {
+                if (chip8->keypad[i]) {
+                    chip8->V[x] = (uint8_t)i;
+                    key_pressed = true;
+                    break;
+                }
+            }
+            if (!key_pressed) {
+                chip8->pc -= 2; // Re-execute same instruction
+            }
             break;
+        }
         case 0x15: // Set delay timer value to Vx
             chip8->delay_timer = chip8->V[x];
             break;
@@ -215,6 +256,9 @@ void executeOP(Chip8 *chip8) {
             break;
         case 0x1E: // Set I = I + Vx
             chip8->I += chip8->V[x];
+            break;
+        case 0x29: // Set I = location of sprite for digit Vx
+            chip8->I = FONTSET_ADDRESS + chip8->V[x] * 5;
             break;
         case 0x33: // Store BCD representation of Vx in memory locations I, I+1,
                    // and I+2

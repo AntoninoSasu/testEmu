@@ -5,7 +5,8 @@
 #include "graphics.h"
 #include "input.h"
 
-#define CYCLES_PER_FRAME 10 // nº of opcodes executed per 60Hz frame (~600)
+#define CYCLES_PER_FRAME 10
+#define FRAMES_PER_SECOND 60
 
 int main(int argc, char **argv) {
 
@@ -45,11 +46,11 @@ int main(int argc, char **argv) {
         // Timers tick at 60Hz
         updateTimers(&chip8);
 
-        // refresh display if flag is set
+        // Refresh display if flag is set
         if (chip8.draw_flag)
             drawGraphics(&gfx, &chip8);
 
-        // play beep if flag is set
+        // Play beep if flag is set
         if (chip8.sound_timer > 0) {
             // TODO: play beep
         }
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
 
         // Cap to 60 FPS
         Uint32 elapsed = SDL_GetTicks() - frame_start;
-        const Uint32 frame_delay = 1000 / 60;
+        const Uint32 frame_delay = 1000 / FRAMES_PER_SECOND;
         if (elapsed < frame_delay)
             SDL_Delay(frame_delay - elapsed);
     }

@@ -5,9 +5,9 @@ Built as a learning project following [Ayman Bagabas's writeup](https://aymanbag
 
 - [x] Fetch-decode-execute loop
 - [x] Opcodes: 00E0, 1NNN, 6XNN, ANNN, DXYN
-- [ ] Full opcode table
+- [x] Full opcode table
 - [ ] Sound timer / beep
-- [ ] Keypad input mapping
+- [x] Keypad input mapping
 
 ## Building
 
@@ -20,12 +20,11 @@ cmake --build build
 ## Controls
 
 Original CHIP-8 keypad mapped to QWERTY:
-\`\`\`
+
 1 2 3 C        1 2 3 4
 4 5 6 D   -->  Q W E R
 7 8 9 E   -->  A S D F
 A 0 B F        Z X C V
-\`\`\`
 
 ## Notes / gotchas
 
