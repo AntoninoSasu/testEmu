@@ -9,6 +9,8 @@ Built as a learning project following [Ayman Bagabas's writeup](https://aymanbag
 - [ ] Sound timer / beep
 - [x] Keypad input mapping
 
+Now working on Chip-8 quirks
+
 ## Building
 
 Requires SDL2 and CMake ≥ 3.16.
@@ -29,6 +31,7 @@ A 0 B F        Z X C V
 ## Notes / gotchas
 
 - Memory starts at 0x200 (512), first 512 bytes reserved for interpreter/font data.
+- Fontset starts at 0x50, and its 80 bytes long
 - Timers count down at 60Hz — decouple this from CPU cycle speed or games run too fast/slow.
 
 ## References
