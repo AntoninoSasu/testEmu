@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "audio.h"
 #include "chip8.h"
 #include "graphics.h"
 #include "input.h"
@@ -17,11 +18,17 @@ int main(int argc, char **argv) {
 
     Chip8 chip8;
     Graphics gfx;
+    Audio audio;
 
     initChip8(&chip8);
     // initinput();
-    if (!initGraphics(&gfx, 10)) {
+    if (!initGraphics(&gfx, 16)) {
         fprintf(stderr, "initGraphics failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!initAudio(&audio)) {
+        fprintf(stderr, "initAudio failed\n");
         exit(EXIT_FAILURE);
     }
 
@@ -39,6 +46,8 @@ int main(int argc, char **argv) {
 
         systemisrunning = inputPoll(&chip8);
 
+        chip8.waiting_for_vblank = false;
+
         // execute instruction. Run several CPU cycles per frame
         for (int i = 0; i < CYCLES_PER_FRAME; i++)
             executeOP(&chip8);
@@ -46,17 +55,11 @@ int main(int argc, char **argv) {
         // Timers tick at 60Hz
         updateTimers(&chip8);
 
+        setBeep(&audio, chip8.sound_timer > 0);
+
         // Refresh display if flag is set
         if (chip8.draw_flag)
             drawGraphics(&gfx, &chip8);
-
-        // Play beep if flag is set
-        if (chip8.sound_timer > 0) {
-            // TODO: play beep
-        }
-
-        // set input and set keys states
-        // setinput();
 
         // Cap to 60 FPS
         Uint32 elapsed = SDL_GetTicks() - frame_start;

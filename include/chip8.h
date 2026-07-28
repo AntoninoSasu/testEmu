@@ -29,6 +29,7 @@ typedef struct {
     uint16_t opcode;
 
     bool draw_flag;
+    bool waiting_for_vblank;
 } Chip8;
 
 void initChip8(Chip8 *chip8);

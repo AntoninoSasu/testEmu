@@ -1,15 +1,19 @@
 A CHIP-8 interpreter/emulator written in C, using SDL2 for graphics and input.
 Built as a learning project following [Ayman Bagabas's writeup](https://aymanbagabas.com/posts/chip-8-emulator/).
 
+Also the following chip8 test suite by [Timendus](https://github.com/Timendus/chip8-test-suite) was used to debug and fix the interpreter functionalities and quirks.
+
 ## Status
 
 - [x] Fetch-decode-execute loop
 - [x] Opcodes: 00E0, 1NNN, 6XNN, ANNN, DXYN
 - [x] Full opcode table
-- [ ] Sound timer / beep
+- [x] Sound timer / beep
 - [x] Keypad input mapping
 
-Now working on Chip-8 quirks
+~Now working on Chip-8 quirks~
+
+Only input details are left (test suit 7, option 3 didnt pass)
 
 ## Building
 
@@ -38,3 +42,4 @@ A 0 B F        Z X C V
 
 - [Writing a Chip-8 emulator](https://aymanbagabas.com/posts/chip-8-emulator/)
 - [Cowgod's Chip-8 Technical Reference](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
+- [Timendus/chip8-test-suite](https://github.com/Timendus/chip8-test-suite)

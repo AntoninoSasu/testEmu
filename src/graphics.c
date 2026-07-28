@@ -26,6 +26,8 @@ bool initGraphics(Graphics *gfx, int scale) {
                                      SDL_TEXTUREACCESS_STREAMING, DISPLAY_WIDTH,
                                      DISPLAY_HEIGHT);
 
+    SDL_StopTextInput(); // Used to silence MacOs message when using unicode
+
     return gfx->window && gfx->renderer && gfx->texture;
 }
 

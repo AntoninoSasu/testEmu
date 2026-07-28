@@ -124,12 +124,16 @@ void executeOP(Chip8 *chip8) {
             break;
         case 0x1: // Set Vx = Vx OR Vy
             chip8->V[x] |= chip8->V[y];
+            // NOTE: Chip8 quirk. See also in 0x2 and 0x3
+            chip8->V[0xF] = 0;
             break;
         case 0x2: // Set Vx = Vx AND Vy
             chip8->V[x] &= chip8->V[y];
+            chip8->V[0xF] = 0;
             break;
         case 0x3: // Set Vx = Vx XOR Vy
             chip8->V[x] ^= chip8->V[y];
+            chip8->V[0xF] = 0;
             break;
         case 0x4: { // The values of Vx and Vy are added together. If the result
                     // is greater than 8 bits VF is set to 1, otherwise 0. Only
@@ -155,8 +159,10 @@ void executeOP(Chip8 *chip8) {
         case 0x6: { // If the least-significant bit of Vx is 1, then VF is set
                     // to
                     // 1, otherwise 0. Then Vx is divided by 2
+            // NOTE: Chip8 quirk: whats stored in V[x] is the content if V[y]
+            // shifted. See also in 0xE
             uint8_t aux = chip8->V[x];
-            chip8->V[x] = aux >> 1;
+            chip8->V[x] = chip8->V[y] >> 1;
             chip8->V[0xF] = aux & 1;
             break;
         }
@@ -168,7 +174,7 @@ void executeOP(Chip8 *chip8) {
         case 0xE: { // If the most-significant bit of Vx is 1, then VF is set to
                     // 1, otherwise to 0. Then Vx is multiplied by 2
             uint8_t aux = chip8->V[x];
-            chip8->V[x] = aux << 1;
+            chip8->V[x] = chip8->V[y] << 1;
             chip8->V[0xF] = (aux & 0x80) >> 7;
             break;
         }
@@ -197,20 +203,41 @@ void executeOP(Chip8 *chip8) {
     case 0xC000: // Cxkk: Set Vx = random byte AND kk
         chip8->V[x] = rand() & kk;
         break;
-    case 0xD000: // Dxyn: draw a sprite at coordinates (VX, VY) with a width of
+    case 0xD000: // Dxyn: Draw a sprite at coordinates (VX, VY) with a width of
                  // 8 pixels and a height of N pixels
+
+        // NOTE: Chip8 quirk: it can only draw once per frame
+        if (chip8->waiting_for_vblank) {
+            // If we didnt pass to a new frame we stay in this instruction
+            chip8->pc -= 2;
+            break;
+        }
+        chip8->waiting_for_vblank = true;
+
+        // NOTE: Chip8 quirk: it has clipping
         chip8->V[0xF] = 0;
+
+        uint8_t start_x = chip8->V[x] % DISPLAY_WIDTH;
+        uint8_t start_y = chip8->V[y] % DISPLAY_HEIGHT;
         for (int row = 0; row < n; row++) {
+
+            uint8_t py = start_y + row;
+            if (py >= DISPLAY_HEIGHT) // Clipping: the rest of the sprite is
+                break;                // off-screen
+
             uint8_t spriteByte = chip8->memory[chip8->I + row];
             for (int col = 0; col < 8; col++) {
                 if (!(spriteByte & (0x80 >> col)))
                     continue;
-                int px = (chip8->V[x] + col) % DISPLAY_WIDTH;
-                int py = (chip8->V[y] + row) % DISPLAY_HEIGHT;
+
+                uint8_t px = start_x + col;
+                if (px >= DISPLAY_WIDTH) // Clipping: this pixel is off-screen
+                    continue;
+
                 int idx = py * DISPLAY_WIDTH + px;
                 if (chip8->display[idx])
                     chip8->V[0xF] = 1;
-                chip8->display[idx] ^= 1;
+                chip8->display[idx] ^= 1; // Drawing is an XOR operation
             }
         }
 
@@ -269,13 +296,17 @@ void executeOP(Chip8 *chip8) {
         case 0x55: // Store registers V0 through Vx in memory starting at
                    // location I
             for (int i = 0; i <= x; i++) {
-                chip8->memory[chip8->I + i] = chip8->V[i];
+                chip8->memory[chip8->I] = chip8->V[i];
+                // NOTE: Chip8 quirk (instead of doing memory[I + i])
+                // See also in 0x65
+                chip8->I++;
             }
             break;
         case 0x65: // Read registers V0 through Vx from memory starting at
                    // location I
             for (int i = 0; i <= x; i++) {
-                chip8->V[i] = chip8->memory[chip8->I + i];
+                chip8->V[i] = chip8->memory[chip8->I];
+                chip8->I++;
             }
             break;
         default:
