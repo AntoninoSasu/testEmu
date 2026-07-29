@@ -39,4 +39,3 @@ vcpkg_installed/
 # JSON 
 compile_commands.json
 
-.clang-format
